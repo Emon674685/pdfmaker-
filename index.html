@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Nirob Invoice</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+* {
+    box-sizing: border-box;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+body {
+    margin: 0;
+    background: #e5e5e5;
+    display: flex;
+    justify-content: center;
+    padding: 40px;
+}
+
+/* FORM */
+.form-box {
+    width: 420px;
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 12px;
+    margin-right: 40px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+.form-box h2 {
+    text-align: center;
+}
+
+input {
+    width: 100%;
+    padding: 9px;
+    margin: 8px 0 14px;
+}
+
+button {
+    width: 100%;
+    padding: 12px;
+    background: #facc15;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+/* PDF AREA */
+#pdf {
+    width: 794px;
+    height: 1123px;
+    background: url("bg.jpg") center/cover no-repeat;
+    padding: 50px;
+    display: none;
+}
+
+.invoice {
+    background: rgba(255,255,255,0.88);
+    padding: 45px;
+    height: 100%;
+}
+
+/* HEADER */
+.header {
+    text-align: center;
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: 3px;
+}
+
+.header-line {
+    height: 2px;
+    background: #ccc;
+    margin: 15px 0 30px;
+}
+
+/* INFO */
+.info {
+    display: grid;
+    grid-template-columns: 160px 10px 1fr;
+    row-gap: 10px;
+}
+
+.label {
+    font-weight: 600;
+}
+
+.colon {
+    text-align: center;
+}
+
+/* TABLE */
+.table {
+    margin-top: 40px;
+}
+
+.table-header,
+.row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    padding: 10px 0;
+}
+
+.table-header {
+    border-bottom: 2px solid #ccc;
+    font-weight: bold;
+}
+
+.row {
+    border-bottom: 1px solid #eee;
+}
+
+.total-box {
+    margin-top: 30px;
+    text-align: right;
+    font-size: 24px;
+    font-weight: bold;
+    background: #facc15;
+    padding: 15px;
+    width: 280px;
+    float: right;
+}
+</style>
+</head>
+
+<body>
+
+<!-- FORM -->
+<div class="form-box">
+    <h2>Invoice Form</h2>
+
+    <input id="name" placeholder="Customer Name">
+    <input id="address" placeholder="Address">
+
+    <label>Payment Date</label>
+    <input type="date" id="pay_date">
+
+    <input id="method" placeholder="Payment Method">
+
+    <input id="product" placeholder="Product Name">
+    <input id="qty" type="number" placeholder="Quantity">
+    <input id="price" type="number" placeholder="Price">
+
+    <button onclick="generatePDF()">Generate PDF</button>
+</div>
+
+<!-- PDF -->
+<div id="pdf">
+    <div class="invoice">
+
+        <div class="header">Nirob.com</div>
+        <div class="header">PAYMENT RECEIPT</div>
+        <div class="header-line"></div>
+
+        <div class="info">
+            <div class="label">NAME</div><div class="colon">:</div><div id="p_name"></div>
+            <div class="label">ADDRESS</div><div class="colon">:</div><div id="p_address"></div>
+            <div class="label">PAYMENT DATE</div><div class="colon">:</div><div id="p_date"></div>
+            <div class="label">PAYMENT METHOD</div><div class="colon">:</div><div id="p_method"></div>
+        </div>
+
+        <div class="table">
+            <div class="table-header">
+                <div>PRODUCT</div>
+                <div>QTY</div>
+                <div>PRICE</div>
+                <div>AMOUNT</div>
+            </div>
+
+            <div class="row">
+                <div id="p_product"></div>
+                <div id="p_qty"></div>
+                <div id="p_price"></div>
+                <div id="p_total"></div>
+            </div>
+        </div>
+
+        <div class="total-box">
+            TOTAL: <span id="total"></span>
+        </div>
+
+    </div>
+</div>
+
+<script>
+function generatePDF() {
+    const name = document.getElementById("name").value;
+    const address = document.getElementById("address").value;
+    const date = document.getElementById("pay_date").value;
+    const method = document.getElementById("method").value;
+    const product = document.getElementById("product").value;
+    const qty = Number(document.getElementById("qty").value);
+    const price = Number(document.getElementById("price").value);
+
+    if (!name || !date || !product || !qty || !price) {
+        alert("সব তথ্য পূরণ করো");
+        return;
+    }
+
+    document.getElementById("p_name").innerText = name;
+    document.getElementById("p_address").innerText = address;
+    document.getElementById("p_date").innerText = new Date(date).toDateString();
+    document.getElementById("p_method").innerText = method;
+
+    document.getElementById("p_product").innerText = product;
+    document.getElementById("p_qty").innerText = qty;
+    document.getElementById("p_price").innerText = price + " TK";
+    document.getElementById("p_total").innerText = (qty * price) + " TK";
+    document.getElementById("total").innerText = (qty * price) + " TK";
+
+    document.getElementById("pdf").style.display = "block";
+
+    html2canvas(document.getElementById("pdf"), { scale: 2 }).then(canvas => {
+        const pdf = new jspdf.jsPDF("p", "mm", "a4");
+        const w = pdf.internal.pageSize.getWidth();
+        const h = (canvas.height * w) / canvas.width;
+        pdf.addImage(canvas, "PNG", 0, 0, w, h);
+        pdf.save("Nirob-Receipt.pdf");
+    });
+}
+</script>
+
+</body>
+</html>
